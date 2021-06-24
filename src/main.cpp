@@ -13,10 +13,9 @@ int main() {
     MATRIX dataset;
     VECTOR labels;
     string line, attr, temp;
-    while(fin >> temp){
-        getline(fin, line);
+    while(!fin.eof()){
+        fin >> line;
         stringstream  s(line);
-        cout << 1 << '\n';
         getline(s, attr, ',');
         getline(s, attr, ',');
         if(attr == "1") labels.push_back(1.0);
@@ -27,8 +26,6 @@ int main() {
         }
         dataset.push_back(row);
     }
-
-    cout << dataset.size() << '\n';
 
     /*MATRIX dataset = {{2.7810836,2.550537003},
                       {1.465489372,2.362125076},
@@ -42,16 +39,14 @@ int main() {
                       {7.673756466,3.508563011}};
     VECTOR labels = {0,0,0,0,0,1,1,1,1,1};*/
 
-    /*int n_inputs = dataset[0].size();
+    int n_inputs = dataset[0].size();
     int n_outputs = 2;
 
-    cout << n_inputs << '\n';
-
     MLP mlp(1, n_inputs, n_outputs);
-    mlp.train(dataset, labels, 0.5, 50, n_outputs);
-    VECTOR output = mlp.predict(dataset);
+    mlp.train(dataset, labels, 0.5, 50, n_outputs, true);
+    /*VECTOR output = mlp.predict(dataset);
     int cnt = 0;
-    for (int i = 0; i < output.size(); ++i) {
+    for (int i = 0; i < output.size(); +debug+i) {
         if (labels[i] == output[i]) cnt++;
         // cout << "Truth: " << labels[i] << "    Predicted: " << output[i] << '\n';
     }
