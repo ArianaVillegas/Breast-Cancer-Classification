@@ -1,16 +1,15 @@
-#include "mlp.h"
 #include<stdlib.h>
 #include<time.h>
+#include "mlp.h"
 
-struct SPLIT
-{
+class SPLIT {
+public:
+
     VECTOR y_train,y_test;
     MATRIX x_train, x_test;
 
     SPLIT(VECTOR labels, MATRIX dataset, float k)
     {
-
-
         int maximo = labels.size();
         int train =labels.size()*k;
         int test = labels.size()-train;
@@ -47,6 +46,5 @@ struct SPLIT
             i++;
         }
     }
-
 
 };

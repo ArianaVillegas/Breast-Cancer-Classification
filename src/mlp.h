@@ -1,101 +1,88 @@
-#ifndef MLP_H
-#define MLP_H
+#ifndef MLP_MLP2_H
+#define MLP_MLP2_H
 
-#include <algorithm>
 #include "layer.h"
-
-using namespace std;
+#include "loss.h"
 
 class MLP {
 private:
-    int n_layer, n_hidden, n_output;
+    int n_input, n_output, size;
+    VECTOR n_hidden;
     vector<Layer*> mlp;
+    CrossEntropy cross_entropy;
 
-    VECTOR propagate(VECTOR input){
-        VECTOR new_input;
+    VectorXd propagate(VectorXd input){
         for (Layer* layer:mlp) {
-            new_input.clear();
-            for (Perceptron* perceptron:layer->get_layer()) {
-                new_input.push_back(perceptron->calculate_output(input));
-            }
-            input = new_input;
+            input = layer->calculate_output(input);
         }
         return input;
     }
 
-    void back_propagate(VECTOR y_truth){
+    void back_propagate(VectorXd y_truth){
         // Output layer
-        auto layer = mlp[n_layer]->get_layer();
-        for (int i = 0; i < n_output; ++i) {
-            Perceptron* perceptron = layer[i];
-            double error = y_truth[i] - perceptron->get_output();
-            perceptron->set_accum(error);
-        }
+        Layer *layer = mlp[size-1];
+        layer->set_accum(y_truth);
 
         // Hidden layers
-        for (int i = n_layer-1; i >= 0; --i) {
-            layer = mlp[i]->get_layer();
-            for (int j = 0; j <= n_layer; ++j) {
-                double error = 0.0;
-                for (Perceptron* perceptron:mlp[i + 1]->get_layer()) {
-                    error += perceptron->get_weight_accum(j);
-                }
-                layer[j]->set_accum(error);
-            }
+        for (int i = size-2; i >= 0; --i) {
+            layer = mlp[i];
+            VectorXd y_truth = mlp[i+1]->get_weight_accum();
+            layer->set_accum(y_truth);
         }
     }
 
-    void update_weights(VECTOR x, double alpha){
-        for (int i = 0; i <= n_layer; ++i) {
-            auto layer = mlp[i]->get_layer();
+    void update_weights(VectorXd x, double alpha){
+        for (int i = 0; i < size; ++i) {
+            Layer *layer = mlp[i];
 
             // Update weights
-            for (Perceptron* p:layer) {
-                for (int j = 0; j < x.size(); ++j) {
-                    p->add_weight(alpha * x[j], j);
-                }
-                p->add_bias(alpha);
-            }
+            layer->update_weights(x, alpha);
 
             // Fill new vector
-            VECTOR new_x;
-            for (int j = 0; j < n_hidden; ++j) {
-                new_x.push_back(layer[j]->get_output());
+            if (i != size) {
+                x = layer->get_output();
             }
-            x = new_x;
         }
     }
 
 public:
-    MLP(int n_layer, int n_hidden, int n_output){
-        this->n_layer = n_layer;
+    MLP(int n_input, int n_output, VECTOR n_hidden, string activation){
+        this->n_input = n_input;
         this->n_output = n_output;
         this->n_hidden = n_hidden;
-        for (int i = 0; i < n_layer; ++i) {
-            mlp.push_back(new Layer(n_hidden));
+        this->size = n_hidden.size()+1;
+
+        n_hidden.insert(n_hidden.begin(), n_input);
+        n_hidden.push_back(n_output);
+        for (int i = 0; i < this->size; ++i) {
+            Layer *l = new Layer(n_hidden[i], n_hidden[i+1], activation);
+            mlp.push_back(l);
         }
-        mlp.push_back(new Layer(n_output));
     }
 
     void train(MATRIX dataset, VECTOR labels, double alpha, int epochs, int n_outputs, bool debug=false){
+        int fact = epochs/100;
         for (int i = 0; i < epochs; ++i) {
             double error = 0.0;
             for (int j = 0; j < dataset.size(); ++j) {
-                VECTOR output = propagate(dataset[j]);
-                VECTOR expected(n_outputs, 0.0);
-                expected[labels[j]] = 1;
-                error += mse(output, expected);
+                VectorXd input = Map<VectorXd, Unaligned>(dataset[j].data(), dataset[j].size());
+                VectorXd output = propagate(input);
+                VectorXd expected = VectorXd::Zero(n_outputs);
+                expected[labels[j]] = 1.0;
+                error += cross_entropy.loss(output, expected);
                 back_propagate(expected);
-                update_weights(dataset[j], alpha);
+                update_weights(input, alpha);
             }
-            if(debug) cout << "Epoch " << i << " Error = " << error << '\n';
+            if(debug && (i+1)%fact == 0) cout << "Epoch " << i+1 << " Error = " << error << '\n';
         }
     }
 
     VECTOR predict(MATRIX dataset){
         VECTOR result;
         for (int i = 0; i < dataset.size(); ++i) {
-            VECTOR output = propagate(dataset[i]);
+            VectorXd input = Map<VectorXd, Unaligned>(dataset[i].data(), dataset[i].size());
+            VectorXd out = propagate(input);
+            VECTOR output(out.data(), out.data() + out.size());
             result.push_back(max_element(output.begin(), output.end()) - output.begin());
         }
         return result;
