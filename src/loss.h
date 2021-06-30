@@ -8,7 +8,8 @@ using namespace Eigen;
 using namespace std;
 
 VectorXd softmax(VectorXd input){
-    return input.array().exp() / input.array().exp().sum();
+    auto val = (input.array() - input.maxCoeff()).array().exp();
+    return val / val.sum();
 }
 
 class CrossEntropy {

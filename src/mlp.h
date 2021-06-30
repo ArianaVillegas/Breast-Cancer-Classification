@@ -8,6 +8,7 @@ class MLP {
 private:
     int n_input, n_output, size;
     VECTOR n_hidden;
+    VECTOR error_report;
     vector<Layer*> mlp;
     CrossEntropy cross_entropy;
 
@@ -62,10 +63,12 @@ public:
 
     void train(MATRIX dataset, VECTOR labels, double alpha, int epochs, int n_outputs, bool debug=false){
         int fact = epochs/100;
+        MatrixXd _dataset = min_max_scaler(to_eigen_matrix(dataset));
+        // cout << _dataset << '\n';
         for (int i = 0; i < epochs; ++i) {
             double error = 0.0;
-            for (int j = 0; j < dataset.size(); ++j) {
-                VectorXd input = Map<VectorXd, Unaligned>(dataset[j].data(), dataset[j].size());
+            for (int j = 0; j < _dataset.rows(); ++j) {
+                VectorXd input = _dataset.row(j);
                 VectorXd output = propagate(input);
                 VectorXd expected = VectorXd::Zero(n_outputs);
                 expected[labels[j]] = 1.0;
@@ -73,19 +76,25 @@ public:
                 back_propagate(expected);
                 update_weights(input, alpha);
             }
+            error_report.push_back(error);
             if(debug && (i+1)%fact == 0) cout << "Epoch " << i+1 << " Error = " << error << '\n';
         }
     }
 
     VECTOR predict(MATRIX dataset){
         VECTOR result;
-        for (int i = 0; i < dataset.size(); ++i) {
-            VectorXd input = Map<VectorXd, Unaligned>(dataset[i].data(), dataset[i].size());
+        MatrixXd _dataset = min_max_scaler(to_eigen_matrix(dataset));
+        for (int i = 0; i < _dataset.rows(); ++i) {
+            VectorXd input = _dataset.row(i);
             VectorXd out = propagate(input);
             VECTOR output(out.data(), out.data() + out.size());
             result.push_back(max_element(output.begin(), output.end()) - output.begin());
         }
         return result;
+    }
+
+    VECTOR get_error_report(){
+        return error_report;
     }
 
     ~MLP(){}

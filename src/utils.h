@@ -35,10 +35,19 @@ pair<MATRIX, VECTOR> readCSV(string filename){
 
 MatrixXd to_eigen_matrix(MATRIX m){
     int rows = m.size(), cols = m[0].size();
-    MatrixXd _m(rows, cols+1);
+    MatrixXd _m(rows, cols);
     for (int i = 0; i < rows; ++i) {
-        m[i].push_back(0);
+        // m[i].push_back(0);
         _m.row(i) = Map<VectorXd, Unaligned>(m[i].data(), m[i].size());
     }
     return _m;
 }
+
+MatrixXd min_max_scaler(MatrixXd m){
+    MatrixXd _m(m.rows(), m.cols());
+    for (int i = 0; i < m.cols(); ++i) {
+        _m.col(i) = (m.col(i).array() - m.col(i).minCoeff()) * 1.0 / (m.col(i).maxCoeff() - m.col(i).minCoeff());
+    }
+    return _m;
+}
+
