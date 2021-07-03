@@ -7,6 +7,7 @@
 #include <Eigen/Dense>
 #include "utils.h"
 #include "activation.h"
+#include "optimizer.h"
 
 using namespace std;
 using namespace Eigen;
@@ -14,35 +15,44 @@ using namespace Eigen;
 
 class Layer {
 private:
+    int in_size, out_size;
     MatrixXd weights;
     VectorXd bias;
     VectorXd output;
     VectorXd accum;
-    ActivationFunction* function;
+    ActivationFunction* activation;
+    OptimizerFunction* optimizer;
 
     void select_activation_function(string name){
-        if(name == "sigmoid") function = new Sigmoid();
-        else if(name == "tanh") function = new Tanh();
-        else function = new RELU();
+        if(name == "sigmoid") activation = new Sigmoid();
+        else if(name == "tanh") activation = new Tanh();
+        else activation = new RELU();
+    }
+
+    void select_optimizer_function(string name){
+        if(name == "adam") optimizer = new Adam(in_size, out_size);
+        else optimizer = new NoOptimizer();
     }
 
 public:
-    Layer(int in_size, int out_size, string activation){
-        weights = MatrixXd::Random(in_size, out_size);
-        bias = VectorXd::Random(out_size);
+    Layer(int in_size, int out_size, string activation, string optimizer){
+        this->in_size = in_size;
+        this->out_size = out_size;
+        weights = (MatrixXd::Random(in_size, out_size).array() + 1)/2;
+        bias = (VectorXd::Random(out_size).array() + 1)/2;
         output = VectorXd::Zero(out_size);
         accum = VectorXd::Zero(out_size);
         select_activation_function(activation);
+        select_optimizer_function(optimizer);
     }
 
     VectorXd calculate_output(VectorXd input){
-        output = function->calculate((input.transpose() * weights).transpose() + bias);
+        output = activation->calculate((input.transpose() * weights).transpose() + bias);
         return output;
     }
 
-    void set_accum(VectorXd y_truth){
-        VectorXd error = y_truth - output;
-        accum = (error.array() * function->calculate_derivative(output).array());
+    void set_accum(VectorXd error){
+        accum = (error.array() * activation->calculate_derivative(output).array());
     }
 
     VectorXd get_weight_accum(){
@@ -53,8 +63,11 @@ public:
         MatrixXd x_m(x.size(),1), accum_m(1,accum.size());
         x_m.col(0) = x;
         accum_m.row(0) = accum;
-        weights += alpha * x_m * accum_m;
-        bias += alpha * accum;
+
+        // weights += alpha * x_m * accum_m;
+        // bias += alpha * accum;
+        weights = optimizer->calculate_w(weights, x_m*accum_m, alpha);
+        bias = optimizer->calculate_b(bias, accum, alpha);
     }
 
     VectorXd get_output(){

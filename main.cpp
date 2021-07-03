@@ -16,12 +16,10 @@ int main() {
 
     int n_inputs = dataset[0].size();
     int n_outputs = 2;
-    VECTOR n_hidden = {15};
+    VECTOR n_hidden = {16,8,4};
 
-    MLP mlp(n_inputs, n_outputs, n_hidden, "sigmoid");
-    mlp.train(s.x_train, s.y_train, 0.005, 5000, n_outputs, true);
-
-    // Implementar adagrad
+    MLP mlp(n_inputs, n_outputs, n_hidden, "relu", "adam");
+    mlp.train(s.x_train, s.y_train, 0.0000002, 15000, n_outputs, true);
 
     VECTOR output = mlp.predict(s.x_test);
     int cnt = 0;

@@ -37,7 +37,7 @@ MatrixXd to_eigen_matrix(MATRIX m){
     int rows = m.size(), cols = m[0].size();
     MatrixXd _m(rows, cols);
     for (int i = 0; i < rows; ++i) {
-        // m[i].push_back(0);
+        //m[i].push_back(0);
         _m.row(i) = Map<VectorXd, Unaligned>(m[i].data(), m[i].size());
     }
     return _m;

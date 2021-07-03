@@ -22,13 +22,15 @@ private:
     void back_propagate(VectorXd y_truth){
         // Output layer
         Layer *layer = mlp[size-1];
-        layer->set_accum(y_truth);
+        VectorXd error = y_truth - layer->get_output();
+        layer->set_accum(error);
 
         // Hidden layers
         for (int i = size-2; i >= 0; --i) {
             layer = mlp[i];
             VectorXd y_truth = mlp[i+1]->get_weight_accum();
-            layer->set_accum(y_truth);
+            VectorXd error = y_truth - layer->get_output();
+            layer->set_accum(error);
         }
     }
 
@@ -47,7 +49,7 @@ private:
     }
 
 public:
-    MLP(int n_input, int n_output, VECTOR n_hidden, string activation){
+    MLP(int n_input, int n_output, VECTOR n_hidden, string activation, string optimizer){
         this->n_input = n_input;
         this->n_output = n_output;
         this->n_hidden = n_hidden;
@@ -56,7 +58,7 @@ public:
         n_hidden.insert(n_hidden.begin(), n_input);
         n_hidden.push_back(n_output);
         for (int i = 0; i < this->size; ++i) {
-            Layer *l = new Layer(n_hidden[i], n_hidden[i+1], activation);
+            Layer *l = new Layer(n_hidden[i], n_hidden[i+1], activation, optimizer);
             mlp.push_back(l);
         }
     }
@@ -64,7 +66,6 @@ public:
     void train(MATRIX dataset, VECTOR labels, double alpha, int epochs, int n_outputs, bool debug=false){
         int fact = epochs/100;
         MatrixXd _dataset = min_max_scaler(to_eigen_matrix(dataset));
-        // cout << _dataset << '\n';
         for (int i = 0; i < epochs; ++i) {
             double error = 0.0;
             for (int j = 0; j < _dataset.rows(); ++j) {

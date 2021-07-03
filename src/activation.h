@@ -38,16 +38,16 @@ public:
 class RELU : public ActivationFunction{
 public:
     VectorXd calculate(VectorXd val){
-        VectorXd result;
+        VectorXd result(val.size());
         for(int i=0; i<val.size(); ++i)
-            if(val[i] < 0) result[i] = 0;
+            if(val[i] <= 0) result[i] = 0;
             else result[i] = val[i];
         return result;
     }
     VectorXd calculate_derivative(VectorXd val){
-        VectorXd result;
+        VectorXd result(val.size());
         for(int i=0; i<val.size(); ++i)
-            if(val[i] < 0) result[i] = 0;
+            if(val[i] <= 0) result[i] = 0;
             else result[i] = 1;
         return result;
     }
