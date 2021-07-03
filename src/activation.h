@@ -1,6 +1,7 @@
 #ifndef MLP_ACTIVATION_H
 #define MLP_ACTIVATION_H
 
+#include <algorithm>
 #include <Eigen/Dense>
 
 using namespace std;
@@ -10,6 +11,17 @@ class ActivationFunction{
 public:
     virtual VectorXd calculate(VectorXd val) = 0;
     virtual VectorXd calculate_derivative(VectorXd val) = 0;
+};
+
+class NoActivation : public ActivationFunction{
+public:
+    VectorXd calculate(VectorXd val){
+        return val;
+    }
+
+    VectorXd calculate_derivative(VectorXd val){
+        return VectorXd::Ones(val.size());
+    }
 };
 
 class Sigmoid : public ActivationFunction{
@@ -40,15 +52,13 @@ public:
     VectorXd calculate(VectorXd val){
         VectorXd result(val.size());
         for(int i=0; i<val.size(); ++i)
-            if(val[i] <= 0) result[i] = 0;
-            else result[i] = val[i];
+            result[i] = max(0.0, val[i]);
         return result;
     }
     VectorXd calculate_derivative(VectorXd val){
         VectorXd result(val.size());
         for(int i=0; i<val.size(); ++i)
-            if(val[i] <= 0) result[i] = 0;
-            else result[i] = 1;
+            result[i] = (val[i] > 0);
         return result;
     }
 };

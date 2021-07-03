@@ -3,19 +3,28 @@
 
 #include <Eigen/Dense>
 #include <iostream>
+#include <math.h>
 
 using namespace Eigen;
 using namespace std;
 
-VectorXd softmax(VectorXd input){
-    auto val = (input.array() - input.maxCoeff()).array().exp();
-    return val / val.sum();
-}
-
-class CrossEntropy {
+class LossFunction{
 public:
-    double loss(VectorXd predicted, VectorXd truth){
-        return -(truth.array() * softmax(predicted).array().log().array()).mean();
+    virtual double loss(VectorXd predicted, VectorXd truth) = 0;
+    virtual VectorXd grad(VectorXd predicted, VectorXd truth) = 0;
+};
+
+class SoftmaxCrossEntropy : public LossFunction{
+public:
+    double loss(VectorXd predicted, VectorXd expected){
+        double predicted_expected_sum = (predicted.array() * expected.array()).sum();
+        return - predicted_expected_sum + log(predicted.array().exp().sum());
+    }
+
+    VectorXd grad(VectorXd predicted, VectorXd expected){
+        VectorXd predicted_exp = predicted.array().exp();
+        VectorXd softmax = predicted_exp / predicted_exp.sum();
+        return softmax - expected;
     }
 };
 

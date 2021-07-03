@@ -8,9 +8,9 @@ class MLP {
 private:
     int n_input, n_output, size;
     VECTOR n_hidden;
-    VECTOR error_report;
+    VECTOR loss_report;
     vector<Layer*> mlp;
-    CrossEntropy cross_entropy;
+    LossFunction* loss_function;
 
     VectorXd propagate(VectorXd input){
         for (Layer* layer:mlp) {
@@ -19,18 +19,16 @@ private:
         return input;
     }
 
-    void back_propagate(VectorXd y_truth){
+    void back_propagate(VectorXd expected, VectorXd loss_grad){
         // Output layer
         Layer *layer = mlp[size-1];
-        VectorXd error = y_truth - layer->get_output();
-        layer->set_accum(error);
+        layer->set_accum(loss_grad);
 
         // Hidden layers
         for (int i = size-2; i >= 0; --i) {
             layer = mlp[i];
-            VectorXd y_truth = mlp[i+1]->get_weight_accum();
-            VectorXd error = y_truth - layer->get_output();
-            layer->set_accum(error);
+            loss_grad = mlp[i+1]->get_weight_accum();
+            layer->set_accum(loss_grad);
         }
     }
 
@@ -42,9 +40,7 @@ private:
             layer->update_weights(x, alpha);
 
             // Fill new vector
-            if (i != size) {
-                x = layer->get_output();
-            }
+            x = layer->get_output();
         }
     }
 
@@ -55,6 +51,8 @@ public:
         this->n_hidden = n_hidden;
         this->size = n_hidden.size()+1;
 
+        loss_function = new SoftmaxCrossEntropy();
+
         n_hidden.insert(n_hidden.begin(), n_input);
         n_hidden.push_back(n_output);
         for (int i = 0; i < this->size; ++i) {
@@ -63,22 +61,25 @@ public:
         }
     }
 
-    void train(MATRIX dataset, VECTOR labels, double alpha, int epochs, int n_outputs, bool debug=false){
+    void train(MATRIX dataset, VECTOR labels, double alpha, int epochs, int n_outputs, bool debug=false,
+               double tol=1e-9){
         int fact = epochs/100;
         MatrixXd _dataset = min_max_scaler(to_eigen_matrix(dataset));
         for (int i = 0; i < epochs; ++i) {
-            double error = 0.0;
+            double loss = 0.0;
             for (int j = 0; j < _dataset.rows(); ++j) {
                 VectorXd input = _dataset.row(j);
                 VectorXd output = propagate(input);
                 VectorXd expected = VectorXd::Zero(n_outputs);
                 expected[labels[j]] = 1.0;
-                error += cross_entropy.loss(output, expected);
-                back_propagate(expected);
+                loss += loss_function->loss(output, expected);
+                VectorXd loss_grad = loss_function->grad(output, expected);
+                back_propagate(expected, loss_grad);
                 update_weights(input, alpha);
             }
-            error_report.push_back(error);
-            if(debug && (i+1)%fact == 0) cout << "Epoch " << i+1 << " Error = " << error << '\n';
+            loss_report.push_back(loss);
+            if(debug && (i+1)%fact == 0) cout << "Epoch " << i+1 << " Loss = " << loss << '\n';
+            if(log(loss) < tol) break;
         }
     }
 
@@ -94,8 +95,8 @@ public:
         return result;
     }
 
-    VECTOR get_error_report(){
-        return error_report;
+    VECTOR get_loss_report(){
+        return loss_report;
     }
 
     ~MLP(){}

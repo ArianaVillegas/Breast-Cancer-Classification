@@ -26,7 +26,8 @@ private:
     void select_activation_function(string name){
         if(name == "sigmoid") activation = new Sigmoid();
         else if(name == "tanh") activation = new Tanh();
-        else activation = new RELU();
+        else if(name == "relu") activation = new RELU();
+        else activation = new NoActivation();
     }
 
     void select_optimizer_function(string name){
@@ -51,8 +52,8 @@ public:
         return output;
     }
 
-    void set_accum(VectorXd error){
-        accum = (error.array() * activation->calculate_derivative(output).array());
+    void set_accum(VectorXd loss){
+        accum = (loss.array() * activation->calculate_derivative(output).array());
     }
 
     VectorXd get_weight_accum(){
@@ -64,8 +65,6 @@ public:
         x_m.col(0) = x;
         accum_m.row(0) = accum;
 
-        // weights += alpha * x_m * accum_m;
-        // bias += alpha * accum;
         weights = optimizer->calculate_w(weights, x_m*accum_m, alpha);
         bias = optimizer->calculate_b(bias, accum, alpha);
     }

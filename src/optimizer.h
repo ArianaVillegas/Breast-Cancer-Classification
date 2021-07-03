@@ -19,10 +19,10 @@ class NoOptimizer : public OptimizerFunction{
 public:
     NoOptimizer(){};
     MatrixXd calculate_w(MatrixXd w, MatrixXd grad_w, double alpha){
-        return w + alpha * grad_w;
+        return w - alpha * grad_w;
     }
     VectorXd calculate_b(VectorXd b, VectorXd grad_b, double alpha){
-        return b + alpha * grad_b;
+        return b - alpha * grad_b;
     }
 };
 
@@ -31,7 +31,7 @@ class Adam : public OptimizerFunction{
 private:
     MatrixXd old_mw, old_vw;
     VectorXd old_mb, old_vb;
-	double b1=0.999;
+	double b1=0.9;
 	double b2=0.999;
 	double e=1e-8;
 	int tw, tb, n_input, n_output, size;
@@ -57,7 +57,7 @@ public:
         old_mw = m_t;
         old_vw = v_t;
 
-        w = w.array() + (alpha * moment_m_t).array() / (moment_v_t.array().sqrt() + e);
+        w = w.array() - (alpha * moment_m_t).array() / (moment_v_t.array().sqrt() + e);
 		tw++;
 
 		return w;
@@ -73,7 +73,7 @@ public:
         old_mb = m_t;
         old_vb = v_t;
 
-        b = b.array() + (alpha * moment_m_t).array() / (moment_v_t.array().sqrt() + e);
+        b = b.array() - (alpha * moment_m_t).array() / (moment_v_t.array().sqrt() + e);
         tb++;
 
         return b;
