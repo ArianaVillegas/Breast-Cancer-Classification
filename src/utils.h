@@ -5,6 +5,7 @@
 
 #include <Eigen/Dense>
 #include <iostream>
+#include "string.h"
 
 using namespace Eigen;
 using namespace std;
@@ -51,3 +52,21 @@ MatrixXd min_max_scaler(MatrixXd m){
     return _m;
 }
 
+void add_to_report(string funcion, VECTOR capas, string optimizador,double acc, VECTOR error)
+{
+    std::fstream f("results.csv", std::ios::app);
+    f<<funcion<<" ";
+    for(auto i:capas)
+        f<<to_string(i)<<" ";
+        
+    f<<optimizador<<" \n";
+    
+    f<<"ACC: "<<to_string(acc)<<"\n";
+    for(auto i:error)
+        f<<to_string(i)<<",";
+    f<<"\n";
+
+    
+   f.close();
+
+}

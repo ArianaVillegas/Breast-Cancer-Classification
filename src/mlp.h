@@ -63,6 +63,7 @@ public:
 
     void train(MATRIX dataset, VECTOR labels, double alpha, int epochs, int n_outputs, bool debug=false,
                double tol=1e-9){
+        this->loss_report={};
         int fact = epochs/100;
         MatrixXd _dataset = min_max_scaler(to_eigen_matrix(dataset));
         for (int i = 0; i < epochs; ++i) {

@@ -38,6 +38,7 @@ class Bootstrap
                     train.push_back(num);
                     aux[num]=true;
                 }
+                sort(train.begin(),train.end());
 
                 for(int j=0;j<n;j++)
                 {
@@ -50,9 +51,12 @@ class Bootstrap
         }
     }
 
-    void Accuracy(MLP mlp, VECTOR labels, MATRIX dataset, double alpha, int epochs, int n_outputs, bool debug=false)
+    pair<double,VECTOR> Accuracy(MLP mlp, VECTOR labels, MATRIX dataset, double alpha, int epochs, int n_outputs, bool debug=false)
     {
         double acc = 0;
+        VECTOR acc_v;
+        VECTOR error(epochs,0);
+        vector<VECTOR> errores;
         for(auto split : splits)
         {
             auto [x_train, y_train] = extract(split.first,dataset,labels);
@@ -65,8 +69,29 @@ class Bootstrap
             }
             cout << "Size: " << output.size() << "  Accuracy: " << cnt*1.0 / output.size() * 100 << "%\n";
             acc+=(cnt*1.0 / output.size() * 100 )/splits.size();
-        }           
+            acc_v.push_back((cnt*1.0 / output.size() * 100 ));
+        
+          auto report = mlp.get_loss_report();
+            int s = report.size();
+            cout<<s<<endl;
+            for(int i = 0; i<epochs; i++)
+            {
+                if(i<s)
+                {
+                    error[i]+=report[i]/splits.size();
+                }
+                else{
+                    error[i]+=report.back()/splits.size();
+                }
+            }
+        }
+        /*           
         cout<< "Accuracy "<<acc<<endl;
+        for(auto i:acc_v)
+            cout<<i<<endl;
+        */
+       return {acc,error};
+        
     }
 
 
