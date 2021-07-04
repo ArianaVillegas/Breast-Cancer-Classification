@@ -11,7 +11,7 @@ int main() {
     srand(time(0));
 
     auto[dataset, labels] = readCSV("dataset.csv");
-    vector<string> funciones_activacion={"sigmod","tanh","relu"};
+    vector<string> funciones_activacion={"sigmoid","tanh","relu",""};
     vector<VECTOR> capas ={{15},{15,10},{15,10,5},{16},{16,8},{16,8,4}};
     vector<string> optimizadores = {"adam",""};
     //SPLIT s(labels, dataset, 0.7);
